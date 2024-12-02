@@ -1,4 +1,4 @@
-package main
+package day2
 
 import (
 	"fmt"
@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-func main() {
+func Main() {
 	input, err := os.ReadFile("./puzzle-1-input.txt")
 	if err != nil {
 		log.Fatalf("error: %v", err)
