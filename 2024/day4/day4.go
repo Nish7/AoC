@@ -14,22 +14,12 @@ var input string
 
 func main() {
 	board := parseInput(input)
-	fmt.Printf("Board: %v\n", board)
 	xmasCount := wordSearch(board, "XMAS")
 	fmt.Printf("%d\n", xmasCount)
 }
 
 func wordSearch(board [][]string, word string) int {
 	count := 0
-
-	contains := func(path [][2]int, coord [2]int) bool {
-		for _, p := range path {
-			if p == coord {
-				return true
-			}
-		}
-		return false
-	}
 
 	var search func(x, y, idx int, path [][2]int, xDir int, yDir int)
 	search = func(x, y, idx int, path [][2]int, xDir int, yDir int) {
@@ -38,11 +28,7 @@ func wordSearch(board [][]string, word string) int {
 			return
 		}
 
-		if x >= len(board) || y >= len(board[1]) || x < 0 || y < 0 || board[x][y] != string(word[idx]) {
-			return
-		}
-
-		if contains(path, [2]int{x, y}) {
+		if x >= len(board) || y >= len(board[1]) || x < 0 || y < 0 || board[x][y] != string(word[idx]) || contains(path, [2]int{x, y}) {
 			return
 		}
 
@@ -67,6 +53,15 @@ func wordSearch(board [][]string, word string) int {
 	}
 
 	return count
+}
+
+func contains(path [][2]int, coord [2]int) bool {
+	for _, p := range path {
+		if p == coord {
+			return true
+		}
+	}
+	return false
 }
 
 func parseInput(st string) [][]string {
