@@ -56,14 +56,6 @@ func checkUpdates(updates [][]int, rules [][2]int) (goodUpdates [][]int) {
 	return
 }
 
-func getRulesMap(rules [][3]int) map[int][]int {
-	mp := make(map[int][]int)
-	for _, r := range rules {
-		mp[r[0]] = append(mp[r[0]], r[1])
-	}
-	return mp
-}
-
 func parseInput(st string) (edges [][2]int, orders [][]int) {
 	p2idx := 0
 	trimNewLine := strings.TrimSuffix(st, "\n")
