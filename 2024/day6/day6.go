@@ -15,7 +15,7 @@ var test string
 var input string
 
 func main() {
-	grid := GetGrid(input)
+	grid := GetGrid(test)
 	fmt.Println(grid)
 
 	position, direction, err := GetStartingPosition(grid)
@@ -32,9 +32,11 @@ func MoveGuard(position [2]int, direction [2]int, grid [][]string) int {
 	// apprpach: start with the intial positiong and direction keep switching the directions by 90deg once you find a obstacle and end the while loop when gets out of board
 	i, j := position[0], position[1]
 	var visited [][2]int
+	visited = append(visited, [2]int{i, j})
 	directions := [][2]int{{0, 1}, {1, 0}, {0, -1}, {-1, 0}}
 
 	for {
+
 		fmt.Println(i, j, direction, grid[i][j])
 		// check if next coord not outside
 		nexti := i + direction[0]
@@ -58,7 +60,6 @@ func MoveGuard(position [2]int, direction [2]int, grid [][]string) int {
 		}
 	}
 
-	fmt.Println(grid)
 	return len(visited)
 }
 
