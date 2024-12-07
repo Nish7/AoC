@@ -15,30 +15,52 @@ var test string
 var input string
 
 func main() {
-	grid := GetGrid(test)
-	fmt.Println(grid)
+	grid := GetGrid(input)
 
 	position, direction, err := GetStartingPosition(grid)
 	if err != nil {
 		fmt.Println(err)
 	}
 
-	fmt.Println(position)
-	positions := MoveGuard(position, direction, grid)
-	fmt.Println(positions)
+	positions, isLoop := MoveGuard(position, direction, grid)
+	fmt.Println(len(positions), isLoop)
+	loopPositions := PutLoopObstacle(position, direction, positions, grid)
+	fmt.Println(loopPositions)
+
 }
 
-func MoveGuard(position [2]int, direction [2]int, grid [][]string) int {
+func PutLoopObstacle(startPosition [2]int, direction [2]int, positions [][2]int, grid [][]string) int {
+	lp := 0
+	for _, p := range positions {
+		if p[0] == startPosition[0] && p[1] == startPosition[1] {
+			continue
+		}
+
+		grid[p[0]][p[1]] = "#"
+		_, isLoop := MoveGuard(startPosition, direction, grid)
+
+		if isLoop {
+			lp++
+		}
+
+		grid[p[0]][p[1]] = "."
+	}
+
+	return lp
+}
+
+func MoveGuard(position [2]int, direction [2]int, grid [][]string) ([][2]int, bool) {
 	// apprpach: start with the intial positiong and direction keep switching the directions by 90deg once you find a obstacle and end the while loop when gets out of board
 	i, j := position[0], position[1]
-	var visited [][2]int
-	visited = append(visited, [2]int{i, j})
+
+	var visited [][2][2]int
+	var visitedDir [][2]int
+	visited = append(visited, [2][2]int{{i, j}, {direction[0], direction[1]}}) // tracks visited cells with direction
+	visitedDir = append(visitedDir, [2]int{i, j})                              // track unique visited cells
+
 	directions := [][2]int{{0, 1}, {1, 0}, {0, -1}, {-1, 0}}
 
 	for {
-
-		fmt.Println(i, j, direction, grid[i][j])
-		// check if next coord not outside
 		nexti := i + direction[0]
 		nextj := j + direction[1]
 		if nexti >= len(grid) || nexti < 0 || nextj >= len(grid[0]) || nextj < 0 {
@@ -52,15 +74,21 @@ func MoveGuard(position [2]int, direction [2]int, grid [][]string) int {
 
 		i = nexti
 		j = nextj
-		coor := [2]int{i, j}
-		grid[i][j] = "X"
+		coor := [2][2]int{{i, j}, {direction[0], direction[1]}}
+		coorD := [2]int{i, j}
+
+		if !slices.Contains(visitedDir, coorD) {
+			visitedDir = append(visitedDir, coorD)
+		}
 
 		if !slices.Contains(visited, coor) {
 			visited = append(visited, coor)
+		} else {
+			return visitedDir, true
 		}
 	}
 
-	return len(visited)
+	return visitedDir, false
 }
 
 func RotateDirection(current [2]int, directions [][2]int) [2]int {
