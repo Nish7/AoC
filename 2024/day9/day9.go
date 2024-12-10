@@ -17,7 +17,7 @@ func main() {
 	diskMap := ProcessDiskMap(input)
 	compressedMap := CompressDisk(diskMap)
 	checksum := FileSystemChecksum(compressedMap)
-	fmt.Println(checksum)
+	fmt.Println(compressedMap, checksum)
 }
 
 func FileSystemChecksum(diskMap []string) int {
@@ -30,40 +30,61 @@ func FileSystemChecksum(diskMap []string) int {
 }
 
 func CompressDisk(diskMap []string) []string {
-	left := 0
 	right := len(diskMap) - 1
 
-	for {
-		if !(left < right) {
+	for right >= 0 {
+		// Find the last non-empty block
+		for right >= 0 && diskMap[right] == "." {
+			right--
+		}
+
+		if right < 0 {
 			break
 		}
 
-		// find the index to start writing into
-		for {
-			if diskMap[left] == "." || left >= right {
-				break
-			}
-			left++
+		// Calculate the file length
+		fileLen := 0
+		for fileLen = 0; right-fileLen >= 0 && diskMap[right-fileLen] == diskMap[right]; fileLen++ {
 		}
 
-		// find the index to start reading into
-		for {
-			if diskMap[right] != "." || right <= left {
-				break
-			}
-			right--
-		}
+		fmt.Println("Looking a space for ", diskMap[right], fileLen, right)
 
-		// keep swapping until
-		for {
-			if !(left < right && diskMap[left] == "." && diskMap[right] != ".") {
+		left := 0
+		for left < right {
+			// loop until u find the empty
+			for left < right && diskMap[left] != "." {
+				left++
+			}
+
+			if left >= right {
 				break
 			}
 
-			diskMap[left], diskMap[right] = diskMap[right], diskMap[left]
-			left++
-			right--
+			// Count contiguous empty space
+			emptySpace := 0
+			for emptySpace = 0; left+emptySpace < right && diskMap[left+emptySpace] == "."; emptySpace++ {
+			}
+
+			if emptySpace < fileLen {
+				left += fileLen + 1
+				continue
+			}
+
+			// Check if empty space is sufficient
+			if emptySpace >= fileLen {
+				fmt.Println("Swapping block", diskMap[right], "to position", left)
+				// swapping block
+				for i := 0; i < fileLen; i++ {
+					diskMap[left+i], diskMap[right-i] = diskMap[right-i], "."
+				}
+				break
+			} else {
+				left += emptySpace
+			}
 		}
+
+		// move the right pointer to the next block
+		right -= fileLen
 	}
 
 	return diskMap
