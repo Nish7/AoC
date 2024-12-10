@@ -17,12 +17,15 @@ func main() {
 	diskMap := ProcessDiskMap(input)
 	compressedMap := CompressDisk(diskMap)
 	checksum := FileSystemChecksum(compressedMap)
-	fmt.Println(compressedMap, checksum)
+	fmt.Println(checksum)
 }
 
 func FileSystemChecksum(diskMap []string) int {
 	checksum := 0
 	for i, l := range diskMap {
+		if l == "." {
+			continue
+		}
 		v, _ := strconv.Atoi(l)
 		checksum += i * v
 	}
@@ -38,16 +41,11 @@ func CompressDisk(diskMap []string) []string {
 			right--
 		}
 
-		if right < 0 {
-			break
-		}
-
 		// Calculate the file length
 		fileLen := 0
-		for fileLen = 0; right-fileLen >= 0 && diskMap[right-fileLen] == diskMap[right]; fileLen++ {
+		for right-fileLen >= 0 && diskMap[right-fileLen] == diskMap[right] {
+			fileLen++
 		}
-
-		fmt.Println("Looking a space for ", diskMap[right], fileLen, right)
 
 		left := 0
 		for left < right {
@@ -56,23 +54,14 @@ func CompressDisk(diskMap []string) []string {
 				left++
 			}
 
-			if left >= right {
-				break
-			}
-
 			// Count contiguous empty space
 			emptySpace := 0
-			for emptySpace = 0; left+emptySpace < right && diskMap[left+emptySpace] == "."; emptySpace++ {
-			}
-
-			if emptySpace < fileLen {
-				left += fileLen + 1
-				continue
+			for left+emptySpace < right && diskMap[left+emptySpace] == "." {
+				emptySpace++
 			}
 
 			// Check if empty space is sufficient
 			if emptySpace >= fileLen {
-				fmt.Println("Swapping block", diskMap[right], "to position", left)
 				// swapping block
 				for i := 0; i < fileLen; i++ {
 					diskMap[left+i], diskMap[right-i] = diskMap[right-i], "."
@@ -108,29 +97,18 @@ func ProcessDiskMap(in string) []string {
 	for i, l := range diskMapI {
 		l, _ := strconv.Atoi(l)
 
-		// for even numbers loop the block number until l times
 		if i%2 == 0 {
-			counter := 0
-			for {
-				if nextPointer >= len(diskMap) || counter == l {
-					break
-				}
+			// Even indices: place file blocks
+			for c := 0; c < l && nextPointer < len(diskMap); c++ {
 				diskMap[nextPointer] = strconv.Itoa(block)
-				nextPointer += 1
-				counter += 1
+				nextPointer++
 			}
-
 			block++
 		} else {
-			// for odd numbers loop the empty space for l times
-			counter := 0
-			for {
-				if nextPointer >= len(diskMap) || counter == l {
-					break
-				}
+			// Odd indices: place free spaces
+			for c := 0; c < l && nextPointer < len(diskMap); c++ {
 				diskMap[nextPointer] = "."
-				nextPointer += 1
-				counter += 1
+				nextPointer++
 			}
 		}
 
