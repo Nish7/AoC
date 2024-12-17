@@ -13,42 +13,63 @@ var test string
 //go:embed input.txt
 var input string
 
+type Point struct {
+	X float64
+	Y float64
+}
+
 func main() {
 	in := parseInput(input)
 	w := 101
 	h := 103
-	midw := int(math.Floor(float64(w / 2)))
-	midh := int(math.Floor(float64(h / 2)))
+	totalTime := 10000 // Total simulation time in seconds
 
-	for i := 0; i < 100; i++ {
-		q1 := 0
-		q2 := 0
-		q3 := 0
-		q4 := 0
+	for i := 0; i <= totalTime; i++ {
+		points := []Point{}
+
 		for _, r := range in {
 			x, y := GetEndPosition(r, w, h, i)
-			switch {
-			case x < midw && y < midh:
-				q1++
-			case x > midw && y < midh:
-				q2++
-			case x < midw && y > midh:
-				q3++
-			case x > midw && y > midh:
-				q4++
-			}
-
-			print(q1, q2, q3, q4)
+			points = append(points, Point{X: float64(x), Y: float64(y)})
 		}
-	}
 
-	ans := q1 * q2 * q3 * q4
-	fmt.Println(ans)
+		var sumDist float64
+		count := 0
+		for m := 0; m < len(points); m++ {
+			for n := m + 1; n < len(points); n++ {
+				dist := math.Hypot(points[m].X-points[n].X, points[m].Y-points[n].Y)
+				sumDist += dist
+				count++
+			}
+		}
+
+		var sumX, sumY float64
+		for _, p := range points {
+			sumX += p.X
+			sumY += p.Y
+		}
+		centroidX := sumX / float64(len(points))
+		centroidY := sumY / float64(len(points))
+
+		var sumSqDist float64
+		for _, p := range points {
+			dx := p.X - centroidX
+			dy := p.Y - centroidY
+			sumSqDist += dx*dx + dy*dy
+		}
+		var stdDev float64
+		if len(points) > 0 {
+			stdDev = math.Sqrt(sumSqDist / float64(len(points)))
+		}
+
+		if stdDev >= 0 && stdDev <= 30 {
+			fmt.Println(i, stdDev)
+		}
+
+	}
 }
 
 func GetEndPosition(r [2][2]int, w, h int, second int) (int, int) {
 	x, y, vx, vy := r[0][0], r[0][1], r[1][0], r[1][1]
-	fmt.Println(x, y, vx, vy)
 	endx := ((x + vx*second) % w)
 	if endx < 0 {
 		endx += w
