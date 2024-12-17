@@ -13,11 +13,6 @@ var test string
 //go:embed input.txt
 var input string
 
-type Point struct {
-	X float64
-	Y float64
-}
-
 func main() {
 	in := parseInput(input)
 	w := 101
@@ -25,41 +20,30 @@ func main() {
 	totalTime := 10000 // Total simulation time in seconds
 
 	for i := 0; i <= totalTime; i++ {
-		points := []Point{}
+		var points [][2]float64
 
 		for _, r := range in {
 			x, y := GetEndPosition(r, w, h, i)
-			points = append(points, Point{X: float64(x), Y: float64(y)})
-		}
-
-		var sumDist float64
-		count := 0
-		for m := 0; m < len(points); m++ {
-			for n := m + 1; n < len(points); n++ {
-				dist := math.Hypot(points[m].X-points[n].X, points[m].Y-points[n].Y)
-				sumDist += dist
-				count++
-			}
+			points = append(points, [2]float64{float64(x), float64(y)})
 		}
 
 		var sumX, sumY float64
 		for _, p := range points {
-			sumX += p.X
-			sumY += p.Y
+			sumX += p[0]
+			sumY += p[1]
 		}
 		centroidX := sumX / float64(len(points))
 		centroidY := sumY / float64(len(points))
 
 		var sumSqDist float64
 		for _, p := range points {
-			dx := p.X - centroidX
-			dy := p.Y - centroidY
+			dx := p[0] - centroidX
+			dy := p[1] - centroidY
 			sumSqDist += dx*dx + dy*dy
 		}
+
 		var stdDev float64
-		if len(points) > 0 {
-			stdDev = math.Sqrt(sumSqDist / float64(len(points)))
-		}
+		stdDev = math.Sqrt(sumSqDist / float64(len(points)))
 
 		if stdDev >= 0 && stdDev <= 30 {
 			fmt.Println(i, stdDev)
