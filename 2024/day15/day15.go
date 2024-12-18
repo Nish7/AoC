@@ -4,6 +4,8 @@ import (
 	_ "embed"
 	"fmt"
 	"strings"
+	"time"
+	// "time"
 )
 
 //go:embed test.txt
@@ -13,7 +15,7 @@ var test string
 var input string
 
 func main() {
-	board, directions := ParseInput(input)
+	board, directions := ParseInput(test)
 	var sx, sy int
 
 	for i := 0; i < len(board); i++ {
@@ -25,6 +27,7 @@ func main() {
 	}
 
 	fmt.Println("Starting Position: ", sx, sy)
+	PrintBoard(board)
 
 	Move := func(xdir, ydir int) {
 		frontX, frontY := sx+xdir, sy+ydir
@@ -45,52 +48,130 @@ func main() {
 			return
 		}
 
-		if inFront == "O" {
-			var boxes [][2]int
-			currentX, currentY := frontX, frontY
+		// Handle box pushing
+		type Box struct {
+			x1 int
+			y1 int
+			x2 int
+			y2 int
+		}
 
-			for { // keep looping in the same dir until u find the boxes
-				if currentX < 0 || currentX >= len(board) || currentY < 0 || currentY >= len(board[0]) {
+		var leadingChar string
+		switch {
+		case xdir == 0 && ydir == -1: // Left
+			leadingChar = "]"
+		case xdir == 0 && ydir == 1: // Right
+			leadingChar = "["
+		}
+
+		if inFront == leadingChar && ydir != 0 {
+			var boxes []Box
+			closingX, closingY := frontX, frontY+ydir
+			boxes = append(boxes, Box{frontX, frontY, closingX, closingY})
+
+			currentXa, currentYa := closingX, closingY+ydir
+			currentXb, currentYb := currentXa, currentYa+ydir
+			// FIX: currently it is moving in two pairs. that doesnt work as we should be only looking into moving into next one
+			for {
+				if currentXa > len(board) || currentYa > len(board[0]) || currentXa < 0 || currentYa < 0 {
 					break
 				}
 
-				cell := board[currentX][currentY]
-				if cell == "O" {
-					boxes = append(boxes, [2]int{currentX, currentY})
-					currentX += xdir
-					currentY += ydir
-				} else {
+				if currentXb > len(board) || currentYb > len(board[0]) || currentXb < 0 || currentYb < 0 {
 					break
 				}
+
+				if board[currentXa][currentYa] != leadingChar && board[currentXb][currentYb] != leadingCharFlipped(leadingChar) {
+					break
+				}
+
+				boxes = append(boxes, Box{currentXa, currentYa, currentXb, currentYb})
+
+				currentYa = currentYa + (2 * ydir)
+				currentYb = currentYb + (2 * ydir)
 			}
 
-			if currentX < 0 || currentX >= len(board) || currentY < 0 || currentY >= len(board[0]) {
+			fmt.Println(board[currentXa][currentYa], board[currentXb][currentYb])
+			fmt.Println(boxes)
+
+			if board[currentXb][currentYb] != "." && board[currentXa][currentYa] != "." {
 				return
 			}
 
-			// check if the next cell is .
-			nextCell := board[currentX][currentY]
-			if nextCell != "." {
-				return
-			}
-
-			// move last boxes one by one
+			// move the boxes
 			for i := len(boxes) - 1; i >= 0; i-- {
 				box := boxes[i]
-				newX, newY := box[0]+xdir, box[1]+ydir
-				board[newX][newY] = "O"
-				board[box[0]][box[1]] = "."
+				newXa, newYa := box.x1+xdir, box.y1+ydir
+				newXb, newYb := box.x2+xdir, box.y2+ydir
+				board[newXb][newYb] = leadingCharFlipped(leadingChar)
+				board[box.x2][box.y2] = "."
+				board[newXa][newYa] = leadingChar
+				board[box.x1][box.y1] = "."
 			}
 
 			board[sx][sy], board[frontX][frontY] = board[frontX][frontY], board[sx][sy]
 			sx += xdir
 			sy += ydir
-			return
 		}
+
+		if inFront == "[" || inFront == "]" && xdir != 0 {
+			var leftRigth int
+			if inFront == "[" {
+				leftRigth = 1
+			} else {
+				leftRigth = -1
+			}
+			var boxes []Box
+			closingX, closingY := frontX, frontY+leftRigth
+			boxes = append(boxes, Box{frontX, frontY, closingX, closingY})
+
+			currentXa, currentYa := frontX+xdir, frontY
+			currentXb, currentYb := currentXa, closingY
+			for {
+				if currentXa > len(board) || currentYa > len(board[0]) || currentXa < 0 || currentYa < 0 {
+					break
+				}
+
+				if currentXb > len(board) || currentYb > len(board[0]) || currentXb < 0 || currentYb < 0 {
+					break
+				}
+
+				if board[currentXa][currentYa] != inFront && board[currentXb][currentYb] != leadingCharFlipped(inFront) {
+					break
+				}
+
+				boxes = append(boxes, Box{currentXa, currentYa, currentXb, currentYb})
+
+				currentXa = currentXa + xdir
+				currentXb = currentXa
+			}
+
+			fmt.Println(board[currentXa][currentYa], board[currentXb][currentYb])
+			fmt.Println(boxes)
+
+			if board[currentXb][currentYb] != "." || board[currentXa][currentYa] != "." {
+				return
+			}
+
+			// move the boxes
+			for i := len(boxes) - 1; i >= 0; i-- {
+				box := boxes[i]
+				newXa, newYa := box.x1+xdir, box.y1+ydir
+				newXb, newYb := box.x2+xdir, box.y2+ydir
+				board[newXb][newYb] = leadingCharFlipped(inFront)
+				board[box.x2][box.y2] = "."
+				board[newXa][newYa] = inFront
+				board[box.x1][box.y1] = "."
+			}
+
+			board[sx][sy], board[frontX][frontY] = board[frontX][frontY], board[sx][sy]
+			sx += xdir
+			sy += ydir
+		}
+
 	}
 
-	for _, d := range directions {
-		// fmt.Println("----- Taking this Direction: ", d)
+	for i, d := range directions {
 		switch d {
 		case "<":
 			Move(0, -1)
@@ -101,16 +182,28 @@ func main() {
 		case ">":
 			Move(0, 1)
 		}
+
+		fmt.Print("\033[H\033[2J")
+		PrintBoard(board)
+		fmt.Println("----- Taking this Direction: ", d)
+		fmt.Println(i)
+		time.Sleep(300 * time.Millisecond)
 	}
 
-	// PrintBoard(board)
 	val := TotalGPSCoord(board)
 	fmt.Println(val)
 }
 
+func leadingCharFlipped(char string) string {
+	if char == "[" {
+		return "]"
+	}
+	return "["
+}
+
 func PrintBoard(board [][]string) {
 	for _, row := range board {
-		joinedRow := strings.Join(row, " ")
+		joinedRow := strings.Join(row, "")
 		fmt.Println(joinedRow)
 	}
 }
@@ -132,24 +225,32 @@ func TotalGPSCoord(board [][]string) int {
 func ParseInput(in string) (board [][]string, directions []string) {
 	parts := strings.Split(in, "\n\n")
 
-	p1 := parts[0]
 	p2 := strings.ReplaceAll(parts[1], "\n", "")
 	directions = strings.Split(p2, "")
 
-	fields := strings.Split(p1, "\n")
+	fields := strings.Split(parts[0], "\n")
 	var rows [][]string
 	for _, f := range fields {
 		v := strings.Split(f, "")
 		var row []string
 		for _, inp := range v {
-			var ch string
 			switch inp {
-
+			case "#":
+				row = append(row, "#")
+				row = append(row, "#")
+			case "O":
+				row = append(row, "[")
+				row = append(row, "]")
+			case ".":
+				row = append(row, ".")
+				row = append(row, ".")
+			case "@":
+				row = append(row, "@")
+				row = append(row, ".")
 			}
-			row = append(row, ch)
 		}
-		row = append(row, v)
+		rows = append(rows, row)
 	}
 
-	return row, directions
+	return rows, directions
 }
