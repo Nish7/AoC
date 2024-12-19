@@ -3,9 +3,8 @@ package main
 import (
 	_ "embed"
 	"fmt"
+	"slices"
 	"strings"
-	"time"
-	// "time"
 )
 
 //go:embed test.txt
@@ -15,7 +14,7 @@ var test string
 var input string
 
 func main() {
-	board, directions := ParseInput(test)
+	board, directions := ParseInput(input)
 	var sx, sy int
 
 	for i := 0; i < len(board); i++ {
@@ -27,7 +26,7 @@ func main() {
 	}
 
 	fmt.Println("Starting Position: ", sx, sy)
-	PrintBoard(board)
+	// PrintBoard(board)
 
 	Move := func(xdir, ydir int) {
 		frontX, frontY := sx+xdir, sy+ydir
@@ -71,7 +70,6 @@ func main() {
 
 			currentXa, currentYa := closingX, closingY+ydir
 			currentXb, currentYb := currentXa, currentYa+ydir
-			// FIX: currently it is moving in two pairs. that doesnt work as we should be only looking into moving into next one
 			for {
 				if currentXa > len(board) || currentYa > len(board[0]) || currentXa < 0 || currentYa < 0 {
 					break
@@ -91,8 +89,8 @@ func main() {
 				currentYb = currentYb + (2 * ydir)
 			}
 
-			fmt.Println(board[currentXa][currentYa], board[currentXb][currentYb])
-			fmt.Println(boxes)
+			// fmt.Println(board[currentXa][currentYa], board[currentXb][currentYb])
+			// fmt.Println(boxes)
 
 			if board[currentXb][currentYb] != "." && board[currentXa][currentYa] != "." {
 				return
@@ -114,54 +112,78 @@ func main() {
 			sy += ydir
 		}
 
-		if inFront == "[" || inFront == "]" && xdir != 0 {
-			var leftRigth int
-			if inFront == "[" {
-				leftRigth = 1
-			} else {
-				leftRigth = -1
-			}
+		if (inFront == "[" || inFront == "]") && xdir != 0 {
 			var boxes []Box
-			closingX, closingY := frontX, frontY+leftRigth
+			closingX, closingY := frontX, frontY+getLeftRightVal(board[frontX][frontY])
 			boxes = append(boxes, Box{frontX, frontY, closingX, closingY})
 
-			currentXa, currentYa := frontX+xdir, frontY
-			currentXb, currentYb := currentXa, closingY
-			for {
-				if currentXa > len(board) || currentYa > len(board[0]) || currentXa < 0 || currentYa < 0 {
-					break
+			var queue []Box
+			queue = append(queue, Box{frontX, frontY, closingX, closingY})
+			// c := 0
+
+			for len(queue) > 0 {
+				// if len(queue) > 10 || c > 10 {
+				// 	break
+				// }
+
+				fmt.Println(queue)
+
+				b := queue[0]
+				queue = queue[1:]
+				// c++
+
+				fmt.Println(b)
+				if b.x1+xdir > len(board) || b.x1+xdir < 0 || board[b.x1+xdir][b.y1] == "#" {
+					return
 				}
 
-				if currentXb > len(board) || currentYb > len(board[0]) || currentXb < 0 || currentYb < 0 {
-					break
+				if b.x2+xdir > len(board) || b.x2+xdir < 0 || board[b.x2+xdir][b.y2] == "#" {
+					return
 				}
 
-				if board[currentXa][currentYa] != inFront && board[currentXb][currentYb] != leadingCharFlipped(inFront) {
-					break
+				// if the one in front of the opening bracket is same. it means it this box can push one only
+				if board[b.x1][b.y1] == board[b.x1+xdir][b.y1] {
+					// fmt.Println("bracket same")
+					// PrintBoard(board)
+
+					boxes = append(boxes, Box{b.x1 + xdir, b.y1, b.x2 + xdir, b.y2})
+					queue = append(queue, Box{b.x1 + xdir, b.y1, b.x2 + xdir, b.y2})
+					continue
 				}
 
-				boxes = append(boxes, Box{currentXa, currentYa, currentXb, currentYb})
+				// add the box in front of opening bracket if any
+				if board[b.x1+xdir][b.y1] == "]" || board[b.x1+xdir][b.y1] == "[" {
+					// fmt.Println("something above x1")
+					if !slices.Contains(queue, Box{b.x1 + xdir, b.y1 + getLeftRightVal(board[b.x1+xdir][b.y1]), b.x2 + xdir, b.y1}) {
+						fmt.Println("MAYBE HERER")
+						boxes = append(boxes, Box{b.x1 + xdir, b.y1, b.x2 + xdir, b.y1 + getLeftRightVal(board[b.x1+xdir][b.y1])})
+						queue = append(queue, Box{b.x1 + xdir, b.y1, b.x2 + xdir, b.y1 + getLeftRightVal(board[b.x1+xdir][b.y1])})
+					}
+				}
 
-				currentXa = currentXa + xdir
-				currentXb = currentXa
+				// add the obx in front of closing bracker if any
+				if board[b.x2+xdir][b.y2] == "]" || board[b.x2+xdir][b.y2] == "[" {
+					// fmt.Println("something above x2")
+					if !slices.Contains(queue, Box{b.x2 + xdir, b.y2 + getLeftRightVal(board[b.x2+xdir][b.y2]), b.x2 + xdir, b.y2}) {
+						fmt.Println("HERER")
+						boxes = append(boxes, Box{b.x2 + xdir, b.y2, b.x2 + xdir, b.y2 + getLeftRightVal(board[b.x2+xdir][b.y2])})
+						queue = append(queue, Box{b.x2 + xdir, b.y2, b.x2 + xdir, b.y2 + getLeftRightVal(board[b.x2+xdir][b.y2])})
+					}
+				}
+
 			}
 
-			fmt.Println(board[currentXa][currentYa], board[currentXb][currentYb])
 			fmt.Println(boxes)
-
-			if board[currentXb][currentYb] != "." || board[currentXa][currentYa] != "." {
-				return
-			}
 
 			// move the boxes
 			for i := len(boxes) - 1; i >= 0; i-- {
 				box := boxes[i]
 				newXa, newYa := box.x1+xdir, box.y1+ydir
 				newXb, newYb := box.x2+xdir, box.y2+ydir
-				board[newXb][newYb] = leadingCharFlipped(inFront)
-				board[box.x2][box.y2] = "."
-				board[newXa][newYa] = inFront
+				board[newXb][newYb] = board[box.x2][box.y2]
+				board[newXa][newYa] = board[box.x1][box.y1]
 				board[box.x1][box.y1] = "."
+				board[box.x2][box.y2] = "."
 			}
 
 			board[sx][sy], board[frontX][frontY] = board[frontX][frontY], board[sx][sy]
@@ -183,15 +205,15 @@ func main() {
 			Move(0, 1)
 		}
 
-		fmt.Print("\033[H\033[2J")
-		PrintBoard(board)
-		fmt.Println("----- Taking this Direction: ", d)
-		fmt.Println(i)
-		time.Sleep(300 * time.Millisecond)
+		// fmt.Print("\033[H\033[2J")
+		// PrintBoard(board)
+		fmt.Println("Instruction :", i)
+		// time.Sleep(100 * time.Millisecond)
 	}
 
 	val := TotalGPSCoord(board)
 	fmt.Println(val)
+	PrintBoard(board)
 }
 
 func leadingCharFlipped(char string) string {
@@ -201,11 +223,40 @@ func leadingCharFlipped(char string) string {
 	return "["
 }
 
-func PrintBoard(board [][]string) {
-	for _, row := range board {
-		joinedRow := strings.Join(row, "")
-		fmt.Println(joinedRow)
+func getLeftRightVal(inFront string) int {
+	var leftRigth int
+	if inFront == "[" {
+		leftRigth = 1
+	} else {
+		leftRigth = -1
 	}
+
+	return leftRigth
+}
+
+func PrintBoard(warehouse [][]string) {
+	// Clear the screen and reset the cursor
+	fmt.Print("\x1b[2J\x1b[H")
+
+	// Use a strings.Builder for efficient concatenation
+	var builder strings.Builder
+
+	for _, row := range warehouse {
+		for _, c := range row {
+			switch c {
+			case "@":
+				builder.WriteString("\x1b[31m@\x1b[0m") // Red for '@'
+			case "[", "]":
+				builder.WriteString("\x1b[32m" + c + "\x1b[0m") // Green for '[' and ']'
+			default:
+				builder.WriteString(c) // Default character
+			}
+		}
+		builder.WriteByte('\n') // Newline after each row
+	}
+
+	// Print the entire warehouse at once
+	fmt.Print(builder.String())
 }
 
 func TotalGPSCoord(board [][]string) int {
@@ -213,8 +264,8 @@ func TotalGPSCoord(board [][]string) int {
 
 	for i := 0; i < len(board); i++ {
 		for j := 0; j < len(board[0]); j++ {
-			if board[i][j] == "O" {
-				gps += 100*i + j
+			if board[i][j] == "[" {
+				gps += 100*i + (j)
 			}
 		}
 	}
