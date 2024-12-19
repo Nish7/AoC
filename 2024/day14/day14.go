@@ -20,6 +20,7 @@ func main() {
 	totalTime := 10000 // Total simulation time in seconds
 
 	for i := 0; i <= totalTime; i++ {
+
 		var points [][2]float64
 
 		for _, r := range in {
@@ -29,6 +30,7 @@ func main() {
 
 		var sumX, sumY float64
 		for _, p := range points {
+
 			sumX += p[0]
 			sumY += p[1]
 		}
@@ -45,7 +47,7 @@ func main() {
 		var stdDev float64
 		stdDev = math.Sqrt(sumSqDist / float64(len(points)))
 
-		if stdDev >= 0 && stdDev <= 30 {
+		if stdDev >= 0 && stdDev <= 30 { // filter all below 30 for clustered positions
 			fmt.Println(i, stdDev)
 		}
 
