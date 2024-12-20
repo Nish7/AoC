@@ -83,21 +83,6 @@ func FindPath(sx, sy int, board [][]string) int {
 	return min_v
 }
 
-func MinInt(a, b, c, d int) int {
-	min := a
-	if b < min {
-		min = b
-	}
-	if c < min {
-		min = c
-	}
-	if d < min {
-		min = d
-	}
-
-	return min
-}
-
 func ParseInput(in string) [][]string {
 	in = strings.TrimSuffix(in, "\n")
 	var out [][]string
