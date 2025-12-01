@@ -14,8 +14,11 @@ var test string
 //go:embed input.txt
 var input string
 
+//go:embed test2.txt
+var input2 string
+
 func main() {
-	grid := GetGrid(input)
+	grid := GetGrid(input2)
 
 	position, direction, err := GetStartingPosition(grid)
 	if err != nil {
