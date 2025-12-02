@@ -30,36 +30,26 @@ std::vector<Entry> parseFile(std::istream &in) {
 
 int getLenOfNum(long long n) { return std::log10(n) + 1; }
 
-// 12 // 10 = 1
-// 12 mod 10 2
-//
-// 1212 // 100 = 12
-// 1212 mod 100 = 12
-//
-// 5555 // 100 = 12
-// 5555 mod 100 = 12
-//
-// 5555 mod X = 12
-// log2(5555,10)
 long long getSum(const Entry &e) {
-  std::cout << "range: " << e.start << " " << e.end  << "\n";
   long long sum = 0;
-  int startlen = getLenOfNum(e.start);
-  int endlen = getLenOfNum(e.end);
 
-  if (startlen != endlen) {
-      // return;
-  }
+  for (long long i = e.start; i <= e.end; ++i) {
+    std::string s = std::to_string(i);
+    int len = s.size();
+    if ((len & 1) != 0)
+      continue;
+    int halflen = len / 2;
 
-  int pow = std::pow(10, startlen / 2);
-  std::cout << startlen << " " << pow << "\n";
-  for (int i = e.start; i <= e.end; i++) {
-    long long first = i / pow;
-    long long last = i % pow;
-    if (first == last) {
-        std::cout << "found: " << first << " " << last << "\n";
-        sum += i;
+    bool ok = true;
+    for (int j = 0; j < halflen; ++j) {
+      if (s[j] != s[halflen + j]) {
+        ok = false;
+        break;
+      }
     }
+
+    if (ok)
+      sum += i;
   }
 
   return sum;
@@ -78,8 +68,8 @@ long long getSumOfInvalids(std::vector<Entry> in) {
 
 int main() {
   try {
-    // std::ifstream in("input.txt");
-    std::ifstream in("test.txt");
+    std::ifstream in("input.txt");
+    // std::ifstream in("test.txt");
 
     if (!in) {
       std::cerr << "Error: file not found";
@@ -87,8 +77,6 @@ int main() {
     }
 
     auto input = Day2::parseFile(in);
-    // std::cout << "size" << input.size();
-    // std::cout.flush();
 
     // for (auto i : input)
     //   std::cout << "Start: " << i.start << " " << "end: " << i.end << "\n";
