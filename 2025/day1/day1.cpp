@@ -1,3 +1,4 @@
+#include <cstdlib>
 #include <fstream>
 #include <iostream>
 #include <stdexcept>
@@ -55,24 +56,58 @@ int getPasscode(std::vector<Entry> &input) {
 
   return zeroCnt;
 }
-};
+
+// task 2
+int getPasscodeWithZero(std::vector<Entry> &input) {
+  int zeroCnt = 0;
+  int curr = 50;
+
+  for (const auto i : input) {
+    std::cout << i.value << " " << zeroCnt << " " << curr << "\n";
+    int tempC = curr;
+    if (i.dir == Dir::L) {
+      curr -= i.value;
+    } else {
+      curr += i.value;
+    }
+
+    if (curr == 0) {
+      zeroCnt++;
+    } else if (curr > 99) {
+      zeroCnt += curr / 100;
+      curr = curr % 100;
+    } else if (curr < 0) {
+      zeroCnt += (std::abs(curr) / 100) + 1;
+      if (tempC == 0)
+        zeroCnt--;
+      curr = ((curr % 100) + 100) % 100;
+    }
+  }
+
+  return zeroCnt;
+}
+
+}; // namespace Day1
 
 int main() {
   try {
     std::ifstream in("input.txt");
     // std::ifstream in("test.txt");
+    // std::ifstream in("bhavya.txt");
     auto input = Day1::parseFile(in);
 
     // for (auto i : input)
     //   std::cout << "Dir: " << i.dir << " " << "value: " << i.value << "\n";
 
-    auto zeroCnt = Day1::getPasscode(input);
-    std::cout << "Task 1 = " << zeroCnt << std::endl;
+    auto a = Day1::getPasscode(input);
+    auto b = Day1::getPasscodeWithZero(input);
+    std::cout << "Task 1 = " << a << "\n";
+    std::cout << "Task 2 = " << b << std::endl;
     return 0;
-  } catch (const std::exception& e) {
-      std::cerr << "Error: " << e.what() << std::endl;
-      return 1;
+  } catch (const std::exception &e) {
+    std::cerr << "Error: " << e.what() << std::endl;
+    return 1;
   }
-  
+
   return 0;
 };
