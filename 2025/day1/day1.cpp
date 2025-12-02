@@ -63,14 +63,9 @@ int getPasscodeWithZero(std::vector<Entry> &input) {
   int curr = 50;
 
   for (const auto i : input) {
-    std::cout << i.value << " " << zeroCnt << " " << curr << "\n";
     int tempC = curr;
-    if (i.dir == Dir::L) {
-      curr -= i.value;
-    } else {
-      curr += i.value;
-    }
-
+    curr = i.dir == Dir::L ? curr + i.value : curr - i.value;
+    
     if (curr == 0) {
       zeroCnt++;
     } else if (curr > 99) {
