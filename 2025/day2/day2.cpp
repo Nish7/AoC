@@ -1,8 +1,8 @@
+#include <cmath>
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
 #include <sstream>
-#include <future>
 #include <vector>
 
 struct Entry {
@@ -28,47 +28,49 @@ std::vector<Entry> parseFile(std::istream &in) {
   return res;
 };
 
+int getLenOfNum(long long n) { return std::log10(n) + 1; }
+
 // 12 // 10 = 1
 // 12 mod 10 2
-// 
+//
 // 1212 // 100 = 12
 // 1212 mod 100 = 12
-// 
-// 5555 // 100 = 12 
-// 5555 mod 100 = 12 
-// 
+//
+// 5555 // 100 = 12
+// 5555 mod 100 = 12
+//
 // 5555 mod X = 12
 // log2(5555,10)
 long long getSum(const Entry &e) {
+  std::cout << "range: " << e.start << " " << e.end  << "\n";
   long long sum = 0;
+  int startlen = getLenOfNum(e.start);
+  int endlen = getLenOfNum(e.end);
+
+  if (startlen != endlen) {
+      // return;
+  }
+
+  int pow = std::pow(10, startlen / 2);
+  std::cout << startlen << " " << pow << "\n";
   for (int i = e.start; i <= e.end; i++) {
-    std::string i_s = std::to_string(i);
-    int len = i_s.size();
-    if (len % 2 != 0)
-      continue;
-    len = len / 2;
-    std::string a = i_s.substr(0, len);
-    std::string b = i_s.substr(len);
-    if (a == b) {
-      // std::cout << a << " " << b << "\n";
-      // std::cout << "same\n";
-      sum += i;
+    long long first = i / pow;
+    long long last = i % pow;
+    if (first == last) {
+        std::cout << "found: " << first << " " << last << "\n";
+        sum += i;
     }
   }
 
   return sum;
 }
 
-long long getSumOfInvalids(std::vector<Entry> in) { 
+long long getSumOfInvalids(std::vector<Entry> in) {
   long long sum = 0;
-  std::vector<std::future<long long>> futs;
-  futs.reserve(in.size());
 
-  for (const auto &e : in)
-    futs.push_back(std::async(std::launch::async, getSum, e));
-
-  for (auto &f : futs)
-    sum += f.get();
+  for (const auto &e : in) {
+    sum += getSum(e);
+  }
 
   return sum;
 }
@@ -76,8 +78,8 @@ long long getSumOfInvalids(std::vector<Entry> in) {
 
 int main() {
   try {
-    std::ifstream in("input.txt");
-    // std::ifstream in("test.txt");
+    // std::ifstream in("input.txt");
+    std::ifstream in("test.txt");
 
     if (!in) {
       std::cerr << "Error: file not found";
