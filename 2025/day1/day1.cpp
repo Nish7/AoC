@@ -75,13 +75,12 @@ int getPasscodeWithZero(std::vector<Entry> &input) {
       zeroCnt++;
     } else if (curr > 99) {
       zeroCnt += curr / 100;
-      curr = curr % 100;
     } else if (curr < 0) {
       zeroCnt += (std::abs(curr) / 100) + 1;
-      if (tempC == 0)
-        zeroCnt--;
-      curr = ((curr % 100) + 100) % 100;
+      if (tempC == 0) zeroCnt--;
     }
+    
+    curr = ((curr % 100) + 100) % 100;
   }
 
   return zeroCnt;
