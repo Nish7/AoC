@@ -28,6 +28,11 @@ std::vector<Entry> parseFile(std::istream &in) {
   return res;
 };
 
+bool repeatedSubstringPattern(std::string s) {
+    std::string concatenated = s + s;
+    return concatenated.substr(1, concatenated.length() - 2).find(s) != std::string::npos;
+}
+
 int getLenOfNum(long long n) { return std::log10(n) + 1; }
 
 long long getSum(const Entry &e) {
@@ -55,15 +60,27 @@ long long getSum(const Entry &e) {
   return sum;
 }
 
-long long getSumOfInvalids(std::vector<Entry> in) {
+long long getSumWithRepeated(const Entry &e) {
   long long sum = 0;
 
-  for (const auto &e : in) {
-    sum += getSum(e);
+  for (long long i = e.start; i <= e.end; ++i) {
+    std::string s = std::to_string(i);
+    if (repeatedSubstringPattern(s)) sum += i;
   }
 
   return sum;
 }
+
+long long getSumOfInvalids(std::vector<Entry> in) {
+  long long sum = 0;
+
+  for (const auto &e : in) {
+    sum += getSumWithRepeated(e);
+  }
+
+  return sum;
+}
+
 } // namespace Day2
 
 int main() {
@@ -81,11 +98,11 @@ int main() {
     // for (auto i : input)
     //   std::cout << "Start: " << i.start << " " << "end: " << i.end << "\n";
 
-    auto a = Day2::getSumOfInvalids(input);
-    std::cout << "Task 1 = " << a << "\n";
+    // auto a = Day2::getSumOfInvalids(input);
+    // std::cout << "Task 1 = " << a << "\n";
 
-    // auto b = Day1::getPasscodeWithZero(input);
-    // std::cout << "Task 2 = " << b << std::endl;
+    auto b = Day2::getSumOfInvalids(input);
+    std::cout << "Task 2 = " << b << std::endl;
     return 0;
   } catch (const std::exception &e) {
     std::cerr << "Error: " << e.what() << std::endl;
