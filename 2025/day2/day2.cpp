@@ -1,6 +1,6 @@
-#include <cmath>
 #include <cstdlib>
 #include <fstream>
+#include <functional>
 #include <iostream>
 #include <sstream>
 #include <vector>
@@ -29,11 +29,28 @@ std::vector<Entry> parseFile(std::istream &in) {
 };
 
 bool repeatedSubstringPattern(std::string s) {
-    std::string concatenated = s + s;
-    return concatenated.substr(1, concatenated.length() - 2).find(s) != std::string::npos;
+  std::string concatenated = s + s;
+  return concatenated.substr(1, concatenated.length() - 2).find(s) !=
+         std::string::npos;
 }
 
-int getLenOfNum(long long n) { return std::log10(n) + 1; }
+bool repeatedSubstringPatternB(std::string s) {
+  // unoptimised one
+  int n = s.size();
+  for (int i = 1; i <= n / 2; i++) {
+    if (n % i == 0) { // factor of n
+      std::string rep = "";
+      for (int j = 0; j < n / i; j++) {
+        rep += s.substr(0, i);
+      }
+
+      if (rep == s)
+        return true;
+    }
+  }
+
+  return false;
+}
 
 long long getSum(const Entry &e) {
   long long sum = 0;
@@ -65,19 +82,18 @@ long long getSumWithRepeated(const Entry &e) {
 
   for (long long i = e.start; i <= e.end; ++i) {
     std::string s = std::to_string(i);
-    if (repeatedSubstringPattern(s)) sum += i;
+    if (repeatedSubstringPatternB(s))
+      sum += i;
   }
 
   return sum;
 }
 
-long long getSumOfInvalids(std::vector<Entry> in) {
+long long getSumOfInvalids(std::vector<Entry> in,
+                           std::function<long long(const Entry &)> invalidFn) {
   long long sum = 0;
-
-  for (const auto &e : in) {
-    sum += getSumWithRepeated(e);
-  }
-
+  for (const auto &e : in)
+    sum += invalidFn(e);
   return sum;
 }
 
@@ -98,10 +114,10 @@ int main() {
     // for (auto i : input)
     //   std::cout << "Start: " << i.start << " " << "end: " << i.end << "\n";
 
-    // auto a = Day2::getSumOfInvalids(input);
-    // std::cout << "Task 1 = " << a << "\n";
+    auto a = Day2::getSumOfInvalids(input, Day2::getSum);
+    std::cout << "Task 1 = " << a << "\n";
 
-    auto b = Day2::getSumOfInvalids(input);
+    auto b = Day2::getSumOfInvalids(input, Day2::getSumWithRepeated);
     std::cout << "Task 2 = " << b << std::endl;
     return 0;
   } catch (const std::exception &e) {
