@@ -136,26 +136,23 @@ public:
 
   long long task2C(std::vector<std::string> input) {
     long long sum = 0;
-    for (const auto &s : input) {
-      int need = 12;
-      int i = 0;
+    for (const auto s : input) {
+      int lastpos = 0;
       std::string max = "";
-      while (need > 0) {
-        int limit = s.size() - need; // 15 - 12 = 3... which means alwyas need
-                                     // to have max from the top 3
-        char max_c = s[i];
-        int max_i = i;
 
-        for (int j = i; i <= limit; j++) {
-          if (s[j] > max_c) {
-            max_c = s[j];
-            max_i = j;
+      for (int limit = 12; limit > 0; limit--) {
+        char max_c = s[lastpos];
+        int max_i = lastpos;
+
+        for (int i = lastpos + 1; i <= s.size() - limit; i++) {
+          if (s[i] > max_c) {
+            max_c = s[i];
+            max_i = i;
           }
         }
 
         max += max_c;
-        i = max_i + 1;
-        need--;
+        lastpos = max_i + 1;
       }
 
       std::cout << max << "\n";
@@ -167,8 +164,8 @@ public:
 
 int main() {
   Solution sol;
-  // std::ifstream in("input.txt");
-  std::ifstream in("test.txt");
+  std::ifstream in("input.txt");
+  // std::ifstream in("test.txt");
   if (!in)
     throw std::runtime_error("not found file");
 
