@@ -28,6 +28,21 @@ vector<vector<int>> parseNumber(ifstream &file) {
   return r;
 }
 
+vector<vector<char>> parsegrid(ifstream &file) {
+  vector<vector<char>> r;
+  string line;
+
+  while (getline(file, line)) {
+    vector<char> re;
+    for (const auto c : line) {
+      re.push_back(c);
+    }
+    r.push_back(re);
+  }
+
+  return r;
+}
+
 enum Ops { PLUS, MUL };
 
 vector<Ops> parseOps(ifstream &file) {
@@ -78,25 +93,67 @@ long long doMaths(vector<vector<int>> num, vector<Ops> ops) {
     auto op = ops[i];
     auto v = num[i];
     long long c = num[i][0];
-    // cout << c << " ";
     for (auto j = 1; j < v.size(); j++) {
-      // cout << v[j] << " ";
-     if (op == Ops::MUL) {
+      if (op == Ops::MUL) {
         c *= v[j];
-        // cout << "*";
       } else if (op == Ops::PLUS) {
         c += v[j];
-        // cout << "+";
       }
     }
-    
-    // cout << " =" << c << " | ";
+
     sum += c;
-    // cout << " =" << sum << "\n";
   }
 
   return sum;
 }
+
+long long byDigits(vector<vector<char>> charGrid, vector<Ops> ops) {
+  vector<vector<long long>> res;
+  vector<long long> newnenr;
+  for (auto cols = 0; cols < charGrid[0].size(); cols++) {
+    auto s = string(1, charGrid[0][cols]);
+    bool allempty = s == " " ? true : false;
+    string entry;
+
+    for (auto rows = 0; rows < charGrid.size(); rows++) {
+      const char v = charGrid[rows][cols];
+      if (v == ' ') {
+        continue;
+      } else {
+        allempty = false;
+      }
+      entry.push_back(v);
+    }
+
+    if (allempty) {
+      res.push_back(newnenr);
+      newnenr.clear();
+    } else {
+      newnenr.push_back(stoll(entry));
+    }
+  }
+  
+  res.push_back(newnenr);
+  
+  int opinx = 0;
+  long long sum = 0;
+  for (auto e : res) {
+    auto op = ops[opinx];
+    long long curr = op == Ops::MUL ? 1 : 0;
+    for (auto v : e) {
+      if (op == Ops::MUL) {
+        curr *= v;
+      } else if (op == Ops::PLUS) {
+        curr += v;
+      }
+    }
+    sum += curr;
+    opinx++;
+  }
+
+  return sum;
+}
+
 } // namespace Day6
 
 int main() {
@@ -106,11 +163,12 @@ int main() {
   // ifstream tinput("test.txt");
   // ifstream opsinput("test_op.txt");
 
-  auto vec = Day6::parseNumber(tinput);
+  // auto vec = Day6::parseNumber(tinput);
+  auto vec = Day6::parsegrid(tinput);
   auto ops = Day6::parseOps(opsinput);
-  auto transpo = Day6::transposeVec(vec);
+  // auto transpo = Day6::transposeVec(vec);
 
-  // for (auto e : transpo) {
+  // for (auto e : vec) {
   //   for (auto er : e) {
   //     cout << er << " ";
   //   }
@@ -123,9 +181,12 @@ int main() {
 
   // cout << endl;
   //
-  //
   // cout << transpo.size() << " " << ops.size() << "\n" << endl;
 
-  auto p1 = Day6::doMaths(transpo, ops);
-  cout << p1 << endl;
+  // auto p1 = Day6::doMaths(transpo, ops);
+  // cout << p1 << endl;
+  //
+
+  auto p2 = Day6::byDigits(vec, ops);
+  cout << p2 << endl;
 }
