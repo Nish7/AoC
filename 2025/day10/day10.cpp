@@ -1,6 +1,7 @@
 #include <cfloat>
 #include <climits>
 #include <fstream>
+#include <queue>
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -172,12 +173,6 @@ public:
   }
 
   int backtrackJoltage(vector<int> curr) {
-    // cout << "------ " << n << "-----\n";
-    // cout << "curr state: ";
-    // printState(curr);
-    // cout << "\n";
-    // // printMemo();
-
     if (curr == this->joltage) {
       return 0;
     }
@@ -208,6 +203,40 @@ public:
     memop2.clear();
     vector<int> init_s(this->joltage.size(), 0);
     return backtrackJoltage(init_s);
+  }
+  
+  int getJoltagePressesBFS() {
+    const vector<int> target = joltage;
+    vector<int> start(target.size(), 0);
+  
+    auto within = [&](const vector<int>& s) {
+      for (size_t i = 0; i < s.size(); i++) if (s[i] > target[i]) return false;
+      return true;
+    };
+  
+    unordered_map<vector<int>, int, VecHash> dist;
+    queue<vector<int>> q;
+  
+    dist[start] = 0;
+    q.push(start);
+  
+    while (!q.empty()) {
+      auto cur = q.front(); q.pop();
+      int d = dist[cur];
+      if (cur == target) return d;
+  
+      for (int b = 0; b < (int)buttons.size(); b++) {
+        auto nxt = cur;
+        for (int idx : buttons[b]) nxt[idx]++;
+  
+        if (!within(nxt)) continue;
+        if (dist.find(nxt) != dist.end()) continue;
+  
+        dist[nxt] = d + 1;
+        q.push(std::move(nxt));
+      }
+    }
+    return INT_MAX; // unreachable
   }
 };
 
@@ -293,16 +322,16 @@ int getTotalPresses(vector<Machine> machines) {
 
 int getTotalJoltage(vector<Machine> machines) {
   int s = 0;
-  // for (auto m : machines) {
-  //   m.print();
-  //   cout.flush();
-  //   auto c = m.getJoltagePresses();
-  //   s += c;
-  //   cout << c << "\n";
-  // }
-  machines[0].print();
-  cout.flush();
-  cout << machines[0].getJoltagePresses();
+  for (auto m : machines) {
+    m.print();
+    // cout.flush();
+    auto c = m.getJoltagePressesBFS();
+    s += c;
+    cout << c << "\n";
+  }
+  // machines[0].print();
+  // cout.flush();
+  // cout << machines[0].getJoltagePresses();
 
   return s;
 }
@@ -310,12 +339,11 @@ int getTotalJoltage(vector<Machine> machines) {
 } // namespace Day10
 
 int main() {
-  ifstream input("test.txt");
-  // ifstream input("input.txt");
-  // auto vec = Day8:}:parseInput(test);
+  // ifstream input("test.txt");
+  ifstream input("input.txt");
   auto machines = Day10::getMachines(input);
   // cout << Day10::getTotalPresses(machines);
-  cout << Day10::getTotalJoltage(machines);
+  cout << Day10::getTotalJoltage(machines) << endl;
 
   // machines[1].print();
   // cout << machines[1].getButtonPresses();
