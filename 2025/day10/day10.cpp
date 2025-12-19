@@ -1,14 +1,15 @@
 #include <cfloat>
-#include <climits>
 #include <fstream>
-#include <queue>
 #include <iostream>
+#include <queue>
 #include <sstream>
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <z3++.h>
 
 using namespace std;
+using namespace z3;
 
 struct PairHash {
   size_t operator()(const pair<vector<bool>, int> &k) const noexcept {
@@ -154,7 +155,7 @@ public:
   }
 
   // -------  Part 2 -------
-  vector<int> pressButton(const vector<int>& curr, int pressIdx) {
+  vector<int> pressButton(const vector<int> &curr, int pressIdx) {
     auto nextstate = curr;
     for (auto i : this->buttons[pressIdx]) {
       nextstate[i] = nextstate[i] + 1;
@@ -162,7 +163,7 @@ public:
     return nextstate;
   }
 
-  bool isWithinBounds(const vector<int>& curr) {
+  bool isWithinBounds(const vector<int> &curr) {
     for (int i = 0; i < curr.size(); i++) {
       if (curr[i] > this->joltage[i]) {
         return false;
@@ -204,39 +205,107 @@ public:
     vector<int> init_s(this->joltage.size(), 0);
     return backtrackJoltage(init_s);
   }
-  
+
   int getJoltagePressesBFS() {
     const vector<int> target = joltage;
     vector<int> start(target.size(), 0);
-  
-    auto within = [&](const vector<int>& s) {
-      for (size_t i = 0; i < s.size(); i++) if (s[i] > target[i]) return false;
+
+    auto within = [&](const vector<int> &s) {
+      for (size_t i = 0; i < s.size(); i++)
+        if (s[i] > target[i])
+          return false;
       return true;
     };
-  
+
     unordered_map<vector<int>, int, VecHash> dist;
     queue<vector<int>> q;
-  
+
     dist[start] = 0;
     q.push(start);
-  
+
     while (!q.empty()) {
-      auto cur = q.front(); q.pop();
+      auto cur = q.front();
+      q.pop();
       int d = dist[cur];
-      if (cur == target) return d;
-  
+      if (cur == target)
+        return d;
+
       for (int b = 0; b < (int)buttons.size(); b++) {
         auto nxt = cur;
-        for (int idx : buttons[b]) nxt[idx]++;
-  
-        if (!within(nxt)) continue;
-        if (dist.find(nxt) != dist.end()) continue;
-  
+        for (int idx : buttons[b])
+          nxt[idx]++;
+
+        if (!within(nxt))
+          continue;
+        if (dist.find(nxt) != dist.end())
+          continue;
+
         dist[nxt] = d + 1;
         q.push(std::move(nxt));
       }
     }
     return INT_MAX; // unreachable
+  }
+
+  vector<z3::expr> buildEquations(z3::context &ctx, optimize &opt,
+                                  vector<expr> &x) {
+    // T = {3,5,4,7} -> target vector
+    // (3) (1,3) (2) (2,3) (0,2) (0,1) --> buttons presses
+    // Systems of linear equations:
+    // (+ 0 x4 x5) = 3
+    // (+ 0 x1 x5) = 5
+    // (+ 0 x2 x3 x4) = 4
+    // (+ 0 x0 x1 x3) = 7
+    vector<z3::expr> counters;
+    // init the counters with expr (0)
+    for (int i = 0; i < this->joltage.size(); i++) {
+      counters.push_back(ctx.int_val(0));
+    }
+
+    for (int j = 0; j < this->buttons.size(); j++) {
+      auto b = buttons[j];
+      for (int i = 0; i < b.size(); i++) {
+        counters[b[i]] = counters[b[i]] + x[j];
+      }
+    }
+
+    for (int i = 0; i < this->joltage.size(); i++) {
+      opt.add(counters[i] == this->joltage[i]);
+    }
+    
+    return counters;
+  }
+
+  int getJoltagePressesSAT() {
+    z3::context ctx;
+    optimize opt(ctx);
+
+    // creates the variable
+    vector<z3::expr> x;
+    for (int i = 0; i < buttons.size(); i++) {
+      x.push_back(ctx.int_const(("x" + to_string(i)).c_str()));
+      opt.add(x[i] >= 0);
+    }
+
+    // get the equations
+    auto eqs = buildEquations(ctx, opt, x);
+
+    // minimize
+    expr total = ctx.int_val(0);
+    for (int i = 0; i < buttons.size(); i++) {
+      total = total + x[i];
+    }
+
+    opt.minimize(total);
+
+    // eval
+    int res = -1;
+    if (opt.check() == z3::sat) {
+      model m = opt.get_model();
+      res = m.eval(total).get_numeral_int();
+    }
+
+    return res;
   }
 };
 
@@ -322,33 +391,19 @@ int getTotalPresses(vector<Machine> machines) {
 
 int getTotalJoltage(vector<Machine> machines) {
   int s = 0;
-  for (auto m : machines) {
-    m.print();
-    // cout.flush();
-    auto c = m.getJoltagePressesBFS();
-    s += c;
-    cout << c << "\n";
-  }
-  // machines[0].print();
-  // cout.flush();
-  // cout << machines[0].getJoltagePresses();
-
+  for (auto m : machines)
+    s += m.getJoltagePressesSAT();
   return s;
 }
 
-} // namespace Day10
+}; // namespace Day10
 
 int main() {
-  // ifstream input("test.txt");
-  ifstream input("input.txt");
+  ifstream input("test.txt");
+  // ifstream input("input.txt");
   auto machines = Day10::getMachines(input);
   // cout << Day10::getTotalPresses(machines);
   cout << Day10::getTotalJoltage(machines) << endl;
-
-  // machines[1].print();
-  // cout << machines[1].getButtonPresses();
-
-  // cout << "\nAnswer: " << machines[0].getButtonPresses();
 
   return 0;
 }
