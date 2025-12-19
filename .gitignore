@@ -1,3 +1,4 @@
 main
 .clangd
 input*.txt
+output_name
