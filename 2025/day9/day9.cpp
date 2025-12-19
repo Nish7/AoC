@@ -99,10 +99,10 @@ vector<Segment> getPolygonEdges(vector<Entry> &points) {
 }
 
 long long area(Entry a, Entry b) {
-    return (long long)(max(a.x,b.x) - min(a.x,b.x)) *
-           (long long)(max(a.y,b.y) - min(a.y,b.y));
+  return (abs(a.x - b.x) + 1) * (abs(a.y - b.y) + 1);
 }
 
+// not used
 int orientation(Entry a, Entry b, Entry c) {
   long long v = (long long)(b.x - a.x) * (c.y - a.y) -
                 (long long)(b.y - a.y) * (c.x - a.x);
@@ -114,19 +114,63 @@ int orientation(Entry a, Entry b, Entry c) {
   return 0;
 }
 
+// not used
 bool isSegmentIntersect(Segment a, Segment b) {
-    int o1 = orientation(a.first, a.second, b.first);
-    int o2 = orientation(a.first, a.second, b.second);
-    int o3 = orientation(b.first, b.second, a.first);
-    int o4 = orientation(b.first, b.second, a.second);
+  int o1 = orientation(a.first, a.second, b.first);
+  int o2 = orientation(a.first, a.second, b.second);
+  int o3 = orientation(b.first, b.second, a.first);
+  int o4 = orientation(b.first, b.second, a.second);
 
-    return o1 * o2 < 0 && o3 * o4 < 0;
+  return o1 * o2 < 0 && o3 * o4 < 0;
+}
+
+bool edgeoverlap(const Segment &edge, int innerminx, int innermaxx,
+                 int innerminy, int innermaxy) {
+  auto p1 = edge.first;
+  auto p2 = edge.second;
+
+  if (p1.y == p2.y) {
+    if (p1.y < innerminy || p1.y > innermaxy)
+      return false;
+
+    int xleft = min(p1.x, p2.x);
+    int xright = max(p1.x, p2.x);
+    return max(xleft, innerminx) <= min(xright, innermaxx);
+  } else {
+    if (p1.x < innerminx || p1.x > innermaxx)
+      return false;
+    int ybottom = min(p1.y, p2.y);
+    int ytop = max(p1.y, p2.y);
+    return max(ybottom, innerminy) <= min(ytop, innermaxy);
+  }
+}
+
+bool isValidRect(Entry a, Entry b, vector<Segment> &polyedges) {
+  int maxx = max(a.x, b.x);
+  int minx = min(a.x, b.x);
+  int maxy = max(a.y, b.y);
+  int miny = min(a.y, b.y);
+
+  int innerminx = minx + 1;
+  int innermaxx = maxx - 1;
+  int innerminy = miny + 1;
+  int innermaxy = maxy - 1;
+
+  if (innermaxx < innerminx || innermaxy < innerminy)
+    return true;
+
+  for (const auto &edge : polyedges) {
+    if (edgeoverlap(edge, innerminx, innermaxx, innerminy, innermaxy))
+      return false;
+  }
+
+  return true;
 }
 
 long long getInsideLargestArea(vector<Entry> &points) {
   vector<pair<long long, pair<Entry, Entry>>> areas;
-  for (int i = 0; i < points.size() - 1; i++) {
-    for (int j = i + 1; j < points.size(); j++) {
+  for (int i = 0; i < points.size(); ++i) {
+    for (int j = i + 1; j < points.size(); ++j) {
       areas.push_back({area(points[i], points[j]), {points[i], points[j]}});
     }
   }
@@ -137,46 +181,11 @@ long long getInsideLargestArea(vector<Entry> &points) {
 
   auto polyedges = getPolygonEdges(points);
 
-  // for (auto p : polyedges) {
-  //     cout << "---";
-  //     print(p.first) ;
-  //     cout << "--";
-  //     print(p.second) ;
-  //     cout << "\n";
-  // }
-
   for (auto a : areas) {
-    bool inters = false;
-    auto rectedges = getRectEdges(a.second.first, a.second.second);
-    cout << " area:" << a.first << "\n";
-    cout << "p1:";
-    print(a.second.first);
-    cout << " --- p2:";
-    print(a.second.second);
-    cout << "rectage segments:\n";
-    for (auto p : polyedges) {
-      for (auto r : rectedges) {
-        cout << "---";
-        print(r.first);
-        cout << "--";
-        print(r.second);
-        cout << "with ";
-        print(p.first);
-        cout << "--";
-        print(p.second);
-        cout << "\n";
-        cout << "\n";
-        if (isSegmentIntersect(p, r)) {
-          inters = true;
-          break;
-        }
-      }
+    Entry p1 = a.second.first;
+    Entry p2 = a.second.second;
 
-      if (inters)
-        break;
-    }
-
-    if (!inters)
+    if (isValidRect(p1, p2, polyedges))
       return a.first;
   }
 
@@ -186,8 +195,8 @@ long long getInsideLargestArea(vector<Entry> &points) {
 } // namespace Day9
 
 int main() {
-  ifstream input("test.txt");
-  // ifstream input("input.txt");
+  // ifstream input("test.txt");
+  ifstream input("input.txt");
   // auto vec = Day8::parseInput(test);
   auto points = Day9::parseInput(input);
   // cout << Day9::getLargestArea(vec) << endl;
